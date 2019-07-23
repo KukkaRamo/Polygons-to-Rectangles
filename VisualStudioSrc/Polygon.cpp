@@ -63,7 +63,7 @@ void Polygon::completeCorners() {
 
 // If there are more than four corners, selects four as main corners
 // The corners are selected in some rotation order
-// The selection policy is chosen by a factory, following abstract factory design pattern
+// The selection policy is chosen by a factory, following the factory design pattern
 void Polygon::selectMainCorners() {
 	if (myCorners.NCorners > NumMainCorners) {
 		MainSelector* myMainSelector = NULL;
