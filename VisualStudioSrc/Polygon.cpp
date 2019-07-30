@@ -5,6 +5,7 @@
 #include "Utilities.h"
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include "OriginalCorners.h"
@@ -66,19 +67,15 @@ void Polygon::completeCorners() {
 // The selection policy is chosen by a factory, following the factory design pattern
 void Polygon::selectMainCorners() {
 	if (myCorners.NCorners > NumMainCorners) {
-		MainSelector* myMainSelector = NULL;
+		unique_ptr <MainSelector> myMainSelector = nullptr;
 		try {
 			myMainSelector = mySelectorFactory.chooseSelector();
 			myMainSelector->selectMainCorners(myCorners, myBoundingBox, mainCornerIdxs, NumMainCorners);
 		}
 		catch (exception e) {
 			cerr << e.what(); // If e is lost here on delete, the message has to be written here
-			if (myMainSelector != NULL)
-				delete myMainSelector; // Delete may throw as well
 			throw e;
 		}
-		if (myMainSelector != NULL)
-			delete myMainSelector;
 	}
 	else {
 		for (int i = 0; i < myCorners.NCorners; ++i) {

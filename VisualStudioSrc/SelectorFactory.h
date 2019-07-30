@@ -1,5 +1,8 @@
 #pragma once
 #include "MainSelector.h"
+#include <memory>
+using namespace std;
+
 class SelectorFactory // Chooses and instantiates the method for selecting main corners
 {
 public:
@@ -7,6 +10,6 @@ public:
 	int product;
 	SelectorFactory(Product pProduct);
 	~SelectorFactory();
-	MainSelector* chooseSelector();
+	unique_ptr<MainSelector> chooseSelector();
 };
 
