@@ -1,0 +1,230 @@
+<html>
+<head>
+	<title>Rectangles with vue</title>
+</head>
+<body>
+
+ <!--1. Link Vue Javascript & Konva-->
+    <script src='https://unpkg.com/vue/dist/vue.js'></script>
+    <script src='https://unpkg.com/konva@4.0.0/konva.min.js'></script>
+    <!--2. Link VueKonva Javascript (Plugin automatically installed)-->
+    <script src='https://unpkg.com/vue-konva/umd/vue-konva.min.js'></script>
+	<!--1. Link PapaParse-->
+	<script src='https://unpkg.com/papaparse@latest/papaparse.min.js'></script>
+	<script src='https://unpkg.com/jquery'></script>
+<style>
+	div.rectClass {
+		background-color: #ffffff;
+		border: 6px solid #000099;
+		font-family:Sans-serif;
+		font-size:1em;
+	}
+	div.myControls {
+		background-color: #ffffff;
+		border-style: solid;
+		border-color: #000099;
+		border-width: 6px 6px 0px 6px;
+		font-family:Sans-serif;
+		font-size:1em;
+		padding:20
+	}
+	button {
+		display:inline-block;
+		border-radius:10%;
+		height:2em;
+		font-size 1em;
+		padding:10px,10px;
+		background-color: #ffff00;
+		border: 3px ridge #ff9900;
+	}
+	
+</style>
+<div class="myControls">
+Note that the rectangles must fit into the stage - there are no size or dimension checks.
+<br><br>
+<label for="myOriginalCSV">File for original rectangles:</label>
+
+<input type="file"
+    id="myOriginalCSV" name="myOriginalCSV" class="myInputButtonStyle"
+    accept=".CSV"
+>
+	   
+<label for="myModifiedCSV">File for modified rectangles:</label>
+
+<input type="file"
+    id="myModifiedCSV" name="myModifiedCSV" class="myInputButtonStyle"
+    accept=".CSV"
+>
+
+<br><br>
+
+<label for="recordCountValue">Record (starts from zero, no value check):</label>
+
+<label id="recordCountValue" class="recordCount">-1</label>
+
+<button id="nextButton" onclick="nextLine()">Next</button>
+<button id="previousButton" onclick="previousLine()">Previous</button>
+<br><br>
+</div>
+<div id='rects' class="rectClass">
+	<v-stage :config="configStage">
+		<v-layer>
+
+			<v-text :config="configAutText">
+			</v-text>
+			<v-text :config="configAutValue">
+			</v-text>
+			
+			<v-text :config="configOriginalRectText">
+			</v-text>
+			<v-line :config="configOriginalRect">
+			</v-line>
+
+			<v-text :config="configModifiedRectText">
+			</v-text>
+			<v-line :config="configModifiedRect">
+			</v-line>
+
+		</v-layer>
+	</v-stage>
+</div>
+
+<script>
+var recordIndex = -1;
+var originalData = [];
+var modifiedData = [];
+var outsideRangeText = "Outside original range";
+var originalDelimiter = " ";
+var modifiedDelimiter = " ";
+var defaultFontSize = 15; // TODO: use em?
+var configs = new Vue({
+	el: '#rects',
+	data: {
+		configStage: {
+			container:'rects',
+			width:600,
+			height:600
+		},
+		configAutText: {
+			x:20,
+			y:20,
+			fontSize:defaultFontSize,
+			text:'Authenticity'
+		},
+		configAutValue: {
+			x:20,
+			y:50,
+			fontSize:defaultFontSize,
+			align:'center',
+			text:'Authenticity value'
+		},
+		configOriginalRectText: {
+			x:200,
+			y:20,
+			fontSize:defaultFontSize,
+			text:'Original rectangle'
+		},
+		configOriginalRect: {
+			x:200,
+			y:100,
+			closed:true,
+			stroke:'black',
+			fill:'#ff0066',
+			points: []
+		},
+		configModifiedRectText: {
+			x:400,
+			y:20,
+			fontSize:defaultFontSize,
+			text:'Modified rectangle'
+		},
+		configModifiedRect: {
+			x:400,
+			y:100,
+			closed:true,
+			stroke:'black',
+			fill:'darkgreen',
+			points: []
+		}
+	}
+});
+
+function parseOriginalData(url) {
+	Papa.parse(url,  {
+		download: true,
+		dynamicTyping: true,
+		delimiter: originalDelimiter,
+		complete: function(results) {
+			originalData = results.data;
+			recordIndex=-1;
+			processLine(recordIndex, recordIndex);
+		}
+	}
+	);
+}
+
+function parseModifiedData(url) {
+	Papa.parse(url, {
+		download: true,
+		dynamicTyping: true,
+		delimiter: modifiedDelimiter,
+		complete: function(results) {
+			modifiedData = results.data;
+			recordIndex=-1;
+			processLine(recordIndex, recordIndex);
+		}
+	}
+	);
+}
+
+function nextLine() {
+	++recordIndex; 
+	processLine(recordIndex, recordIndex);
+}
+
+function previousLine() {
+	--recordIndex;
+	processLine(recordIndex, recordIndex);
+}
+
+function processLine(inputIndex, outputIndex) {
+	document.getElementById("recordCountValue").innerHTML = recordIndex; 
+	if (inputIndex >= 0 && inputIndex < originalData.length) {
+		configs.configAutValue.text = (originalData[inputIndex][0]).toString();
+		configs.configOriginalRect.points = originalData[inputIndex].slice(1);
+	}
+	else {
+		configs.configAutValue.text = outsideRangeText;
+		configs.configOriginalRect.points = [];
+	}
+	if (outputIndex >= 0 && outputIndex < modifiedData.length) {
+		configs.configModifiedRect.points = modifiedData[outputIndex];
+	}
+	else {
+		configs.configModifiedRect.points = [];
+	}
+}
+
+function handleInputFileSelect(inputChangeEvent) {
+    var file = inputChangeEvent.target.files[0];
+	if (inputChangeEvent.target.name == "myOriginalCSV")
+	parseOriginalData(file);
+	else if (inputChangeEvent.target.name == "myModifiedCSV")
+	parseModifiedData(file);
+}
+
+$(document).ready(function(){
+	document.getElementById("recordCountValue").value = recordIndex;
+    $("#myOriginalCSV").change(handleInputFileSelect);
+	$("#myModifiedCSV").change(handleInputFileSelect);
+  });
+</script>
+</body>
+</html>
+
+ <!--
+PapaParse instructions have been used from the following link
+https://www.joyofdata.de/blog/parsing-local-csv-file-with-javascript-papa-parse/
+To make file input buttons look the same as other buttons, get instructions from the JavaScript solution in
+https://www.quirksmode.org/dom/inputfile.html
+-->
